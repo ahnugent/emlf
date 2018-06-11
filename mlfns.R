@@ -1,7 +1,7 @@
 # Script:       mlfns.R
 # Authors:      Allen H. Nugent, 2017+
-# Last edit:    2018-06-05
-# Last test:    2018-06-05
+# Last edit:    2018-06-06
+# Last test:    2018-06-06
 #
 # Purpose:      Library of machine learning utilities.
 #
@@ -90,6 +90,7 @@
 # TODO: create trainModel() fn (?!)
 #           params = training alo name (and package name), algo params
 # TODO: incorporate CV to evaluateModel()
+# TODO: overloaded S3 print method
 
 
 require(EMT)
@@ -162,6 +163,15 @@ getModelPredictions <- function(inmodel, pdat = NULL) {
     #   Invokes the predict() function for data.frame pdat 
     #   and returns the vector of predictions.
 	
+    return.what <- function (inmodel, yhat) {
+        if (!is.null(inmodel$class)) {  #  if (inmodel$class == 'encmodel')
+            inmodel$yhat <- yhat
+            return(inmodel)
+        } else {
+            return(yhat)
+        }
+    }
+    
     if (!is.null(inmodel$class)) {  #  if (inmodel$class == 'encmodel')
         fit <- inmodel$fit
         if (is.null(pdat)) {
@@ -176,18 +186,15 @@ getModelPredictions <- function(inmodel, pdat = NULL) {
     
     # TODO: What special cases / parameters are required by the various incarnations of predict()?
     
-    if (class(fit)[1] == 'glm') {
+    if (class(fit)[1] == c('glm')) {
         yhat <- predict(fit, dat, type = 'response')
-    } else {
-        yhat <- predict(fit, dat)
-    }
+        return(return.what(inmodel, yhat))
+    } 
     
-    if (!is.null(inmodel$class)) {  #  if (inmodel$class == 'encmodel')
-        inmodel$yhat <- yhat
-        return(inmodel)
-    } else {
-        return(yhat)
-    }
+    if (class(fit)[1] == c('naiveBayes')) {
+        yhat <- as.numeric(predict(fit, dat, type = 'raw'))
+        return(return.what(inmodel, yhat))
+    } 
 }
 
 
@@ -711,11 +718,15 @@ vector.indices <- function(x, cvec) {
 }
 
 
+# NOTES for next commit:
+#   added random number generator seed to parameter list
+#   captured params in model$params (list)
+#
 setupModel <- function(indata, algo_code, algo_name, 
                        response_col, predictor_cols = NULL, tag_col = NULL, 
                        response_levels = c(0, 1, NA), 
                        model_name = NULL, subset_name = NULL, 
-                       partitioning = c(0.7, 0.3), nfolds = 1, 
+                       partitioning = c(0.7, 0.3), nfolds = 1, seed = 7, 
                        transforms = NULL, response_type = 'NONE', 
                        boolToFactors = TRUE, na_response.rm = TRUE, 
                        na_predictor.rm = TRUE, invalid.rm = TRUE, 
@@ -750,6 +761,7 @@ setupModel <- function(indata, algo_code, algo_name,
     #                       or 3 proportions for partitioning train/validate/test data, 
     #                       or 0 for no partitioning.
     #   nfolds              Number of folds for cross-validation (1 for no cross-validation).
+    #   seed                Random number generator seed.
     #   boolToFactors       Flag for converting logical columns to factors.
     #   na_predictor.rm     Flag for removing predictor rows with NA's.
     #   na_response.rm      Flag for removing response rows with NA's.
@@ -769,8 +781,9 @@ setupModel <- function(indata, algo_code, algo_name,
     #       model$predictor_cols      
     #       model$subset_name         
     #       model$params$transforms
-    #       model$params$partition
+    #       model$params$partitioning
     #       model$params$nfolds
+    #       model$params$seed
     #       model$params$boolToFactors
     #       model$params$na_response.rm
     #       model$params$invalid.rm
@@ -814,15 +827,27 @@ setupModel <- function(indata, algo_code, algo_name,
     valid.transforms = c('normalise', 'log10')
     
     model <- list()
-    model$class <- 'encmodel'
+    model$class <- 'encmodel'   # deprecated
     model$name <- ifelse(is.null(model_name), 'NONE', model_name)
     model$algo_code <- algo_code
     model$algo_name <- algo_name
+    
     if (response_type %in% c('logical', 'boolean', 'categorical', 'continuous')) {
         model$response_type <- response_type
     } else {
         warning(paste0("setupModel(): response_type not in c('logical', 'boolean', 'categorical', 'continuous')."))
     }
+    
+    model$params <- list()
+    model$params$transforms <- transforms
+    model$params$partitioning <- partitioning
+    model$params$nfolds <- nfolds
+    model$params$seed <- seed
+    model$params$boolToFactors <- boolToFactors
+    model$params$na_response.rm <- na_response.rm
+    model$params$invalid.rm <- invalid.rm
+
+    set.seed(seed)
     
     # model$predictor_cols will be specified columns, entire input dataset:
     if (is.null(predictor_cols)) {

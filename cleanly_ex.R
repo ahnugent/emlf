@@ -1,8 +1,8 @@
 # File:       cleanly_ex.R
 # Authors:    Allen H Nugent, Dec'15+
 # Prev edit:  2017-11-29
-# Last edit:  2018-06-07
-# Last test:  2018-06-07
+# Last edit:  2018-06-11
+# Last test:  2018-06-11
 # Purpose:    Data cleaning functions.
 #
 # NOTE: 'cleanly_ex.R' is a redacted subset of 'cleanly.R': not all functions are available!
@@ -239,7 +239,7 @@ bool.to.logical <- function(x, strict = TRUE) {
     # x == 1    returns TRUE
     # else      returns NA
     
-    return(ifelse(x == 1, TRUE, ifelse(x == 0), FALSE, NA))
+    return(ifelse(x == 1, TRUE, ifelse(x == 0, FALSE, NA)))
 }
 
 

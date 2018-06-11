@@ -1,7 +1,7 @@
 # File:       eml_framework_v0.5.R
 # Authors:    Allen H. Nugent, 2018+
 # Last edit:  2018-06-11
-# Last test:  2018-06-06
+# Last test:  2018-06-11
 # Purpose:    Demonstrates a framework for low-level management of machine learning practice.
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -48,7 +48,7 @@ addPredictors <- function(model)
 {
     
     cat('addPredictors(): Null effect! This function is a placeholder only. \n',
-        'Actual functionality will be problem-specific.')
+        'Actual functionality will be problem-specific. \n')
 }
 
 
@@ -221,10 +221,24 @@ par(mar = c(4, 4, 4, 4) + .1)
 plot.roc(model.A1P1L1$mlabs[model.A1P1L1$training], model.A1P1L1$yhat[model.A1P1L1$training], 
          percent = TRUE, add = FALSE, col = "blue", lwd = 3, 
          main = paste0("ROC Curve for Model ", model.A1P1L1$name, ': Train'))
+rect(100, 0, 0, 100, border = 'gray')
 plot.roc(model.A1P1L1$mlabs[model.A1P1L1$testing], model.A1P1L1$yhat[model.A1P1L1$testing], 
          percent = TRUE, add = FALSE, col = "blue", lwd = 3, 
          main = paste0("ROC Curve for Model ", model.A1P1L1$name, ': Test'))
+rect(100, 0, 0, 100, border = 'gray')
 par(mar = c(4, 3, 1, 1))
+
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# Save / Retrieve Models                                                              =============
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+# save fitted model, data, evaluation results ...
+saveRDS(model.A2P1L1, file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
+
+# retrieve fitted model, data, evaluation results ...
+model.A2P1L1 <- readRDS(file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
+
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
@@ -233,6 +247,7 @@ par(mar = c(4, 3, 1, 1))
 
 
 # Algorithm A2: naiveBayes =============================================================================
+# WARNING: BROKEN !
 
 model.A2P1L1 <- setupModel(indata = titanic, algo_code = A2.code, algo_name = A2.name, 
                            response_col = L1, predictor_cols = P1, tag_col = 'PassengerId', 
@@ -241,10 +256,13 @@ model.A2P1L1 <- setupModel(indata = titanic, algo_code = A2.code, algo_name = A2
                            partitioning = c(0.7, 0.3), nfolds = 1, 
                            response_type = 'logical', boolToFactors = TRUE, verbose = TRUE)
 
-model.A2P1L1$fit <- naiveBayes(mlabs ~., 
-                               data = mutate(model.A2P1L1$mdat, 
+model.A2P1L1$fit <- naiveBayes(mlabs ~.,
+                               data = mutate(model.A2P1L1$mdat,
                                              mlabs = as.logical(model.A2P1L1$mlabs)),
                                subset = model.A2P1L1$training)
+# model.A2P1L1$fit <- naiveBayes(mlabs ~., 
+#                                data = mutate(model.A2P1L1$mdat[model.A2P1L1$training, ], 
+#                                              mlabs = as.logical(model.A2P1L1$mlabs[model.A2P1L1$training])))
 
 model.A2P1L1 <- getModelPredictions(model.A2P1L1)
 model.A2P1L1 <- getModelClasses(model.A2P1L1, threshold = 0.5)
@@ -254,6 +272,7 @@ par(mar = c(4, 4, 4, 4) + .1)
 plot.roc(model.A2P1L1$mlabs[model.A2P1L1$testing], model.A2P1L1$yhat[model.A2P1L1$testing], 
          percent = TRUE, add = FALSE, col = "blue", lwd = 3, 
          main = paste0("ROC Curve for Model ", model.A2P1L1$name, ': Test'))
+rect(100, 0, 0, 100, border = 'gray')
 par(mar = c(4, 3, 1, 1))
 
 
@@ -274,10 +293,10 @@ model.A1P2L1$fit <- glm(mlabs ~., family = binomial(link = 'logit'),
 model.A1P2L1 <- getModelPredictions(model.A1P2L1)
 model.A1P2L1 <- getModelClasses(model.A1P2L1, threshold = 0.5)
 model.A1P2L1 <- evaluateModel(model.A1P2L1, c('training', 'testing'))
-print(model.A1P2L1$eval)
+print(model.A1P2L1$eval$testing$auc)
 
 
-# Predictor Set P3 with Algo A1 ===========================================================================
+# Predictor Set P3 with Algo A1 (logreg) ==================================================================
 
 model.A1P3L1 <- setupModel(indata = titanicwe, algo_code = A1.code, algo_name = A1.name, 
                            response_col = L1, predictor_cols = P3, tag_col = 'PassengerId', 
@@ -297,7 +316,8 @@ print(model.A1P3L1$eval)
 
 
 
-# Predictor Set P3 with Algo A3 ===========================================================================
+# Predictor Set P3 with Algo A3 (random forest classifier) =================================================
+# WARNING: BROKEN!
 
 model.A3P3L1 <- setupModel(indata = titanicwe, algo_code = A3.code, algo_name = A3.name, 
                            response_col = L1, predictor_cols = P3, tag_col = 'PassengerId', 
@@ -306,27 +326,13 @@ model.A3P3L1 <- setupModel(indata = titanicwe, algo_code = A3.code, algo_name = 
                            partitioning = c(0.7, 0.3), nfolds = 1, seed = 777, 
                            response_type = 'boolean', boolToFactors = TRUE, verbose = TRUE)
 
-model.A3P3L1$fit <- randomForest()
-    glm(mlabs ~., family = binomial(link = 'logit'), 
-                        data = mutate(model.A3P3L1$mdat[model.A3P3L1$training, ], 
-                                      mlabs = as.integer(model.A3P3L1$mlabs[model.A3P3L1$training])))
+model.A3P3L1$fit <- randomForest(x = model.A3P3L1$mdat[model.A3P3L1$training, ], 
+                                 y = as.factor(model.A3P3L1$mlabs[model.A3P3L1$training]))
 
 model.A3P3L1 <- getModelPredictions(model.A3P3L1)
-model.A3P3L1 <- getModelClasses(model.A3P3L1, threshold = 0.5)
+#E: model.A3P3L1 <- getModelClasses(model.A3P3L1, threshold = 0.5)
 model.A3P3L1 <- evaluateModel(model.A3P3L1, c('training', 'testing'))
 print(model.A3P3L1$eval)
-
-
-
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-# Save / Retrieve Models                                                              =============
-# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-# save fitted model, data, evaluation results ...
-saveRDS(model.A2P1L1, file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
-
-# retrieve fitted model, data, evaluation results ...
-model.A2P1L1 <- readRDS(file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
 
 
 
