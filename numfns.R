@@ -14,10 +14,6 @@
 #
 #   get.nrow            Gets number of rows in vector or data frame (compensates for R's ludicrous omission).
 #
-#   is.all.integer      Returns TRUE if all members of the input vector are integral.
-#
-#   is.wholenumber      Returns TRUE if argument is a whole number.
-#
 #   numdec              Returns the number of decimal places in a number.
 #
 #   numsig              Returns the number of significant figures in a number.
@@ -108,28 +104,6 @@ numsig <- function(x)
     s1 <- sub('[.,]', '', s1)
     
     return(nchar(s1))
-}
-
-
-is.all.integer <- function(x)
-{   
-    # Returns TRUE if all members of the input vector are integral.
-    
-    if ((sum(sapply(x, is.numeric)) != NROW(x))) {
-        out <- FALSE
-    } else {
-        out <- (sum(sapply(x, is.wholenumber)) == NROW(x))
-    }
-    
-    return(out)
-}
-
-
-is.wholenumber <- function(x, tol = .Machine$double.eps ^ 0.5) 
-{
-    # Returns TRUE if argument is integral (i.e. a whole number).
-    
-    return(abs(x - round(x)) < tol)
 }
 
 
