@@ -78,6 +78,8 @@
 #
 #   plotPredictorStats      Plots a statistic of predictor performance (relative significance or power).
 #
+#   scale_pls_coefficients  Computes, rescales, sorts PLS coefficients.
+#
 #   setupModel              Instantiates the model object -- a list that contains descriptive information,
 #                           training data, and parameters.
 #
@@ -192,7 +194,7 @@ getModelPredictions <- function(inmodel, pdat = NULL) {
     } 
     
     if (class(fit)[1] == c('naiveBayes')) {
-        yhat <- as.numeric(predict(fit, dat, type = 'raw'))
+        yhat <- predict(fit, dat, type = 'raw')[, -1]
         return(return.what(inmodel, yhat))
     } 
 }
@@ -1156,6 +1158,19 @@ trainModel <- function(model, partition = NULL, FUN, ...)
     
     modedl$fit <- fit
     return(model)
+}
+
+
+scale_pls_coefficients <- function(pls.fit) {
+    
+    # Computes, rescales, sorts PLS coefficients.
+    
+    coefficients = coef(pls.fit)
+    sum.coef = sum(sapply(coefficients, abs))
+    coefficients = coefficients * 100 / sum.coef
+    coefficients = sort(coefficients[, 1 , 1], decreasing = TRUE)
+    
+    return(coefficients)
 }
 
 

@@ -1,8 +1,7 @@
 # File:       cleanly_ex.R
 # Authors:    Allen H Nugent, Dec'15+
-# Prev edit:  2017-11-29
-# Last edit:  2018-06-11
-# Last test:  2018-06-11
+# Last edit:  2018-06-14
+# Last test:  2018-06-14
 # Purpose:    Data cleaning functions.
 #
 # NOTE: 'cleanly_ex.R' is a redacted subset of 'cleanly.R': not all functions are available!
