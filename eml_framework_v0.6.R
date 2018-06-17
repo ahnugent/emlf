@@ -1,7 +1,7 @@
-# File:       eml_framework_v0.5.R
+# File:       eml_framework_v0.6.R
 # Authors:    Allen H. Nugent, 2018+
-# Last edit:  2018-06-11
-# Last test:  2018-06-11
+# Last edit:  2018-06-13
+# Last test:  2018-06-13
 # Purpose:    Demonstrates a framework for low-level management of machine learning practice.
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -15,24 +15,10 @@ library(dplyr)
 library(Hmisc)          # rcorr()
 library(pROC)           # plot.roc()
 
-# IMPORTANT:
-#
-# Create your own version of 'set_ml_folders.R' and keep it safe (i.e. don't let it be overwritten 
-# by git pull requests; you may find it better not to work directly within your local repo, but 
-# with a copy of the files)
-#
-# 'set_ml_folders.R' needs to assign these variables:
-#
-#   `folder.lib`    location of the EMLF source code files on your machine
-#   `folder.dat`    location of the EMLF data files on your machine
-#
-
-source('set_ml_folders.R')
-
-source(paste(folder.lib, 'cleanly_ex.R', sep = '/'))
-source(paste(folder.lib, 'strfns.R', sep = '/'))
-source(paste(folder.lib, 'numfns.R', sep = '/'))
-source(paste(folder.lib, 'mlfns.R', sep = '/'))
+# source(paste(folder.lib, 'cleanly_ex.R', sep = '/'))
+# source(paste(folder.lib, 'strfns.R', sep = '/'))
+# source(paste(folder.lib, 'mlfns.R', sep = '/'))
+# source(paste(folder.lib, 'numfns.R', sep = '/'))
 
 file.dat <- 'titanic.csv'
 file.datwe <- 'titanicWithEthnicity.csv'
@@ -54,8 +40,10 @@ addPredictors <- function(model)
 
 # Load data ---------------------------------------------------------------------------------------
 
-titanic <- read.csv(paste(folder.dat, file.dat, sep = '/'))
-titanicwe <- read.csv(paste(folder.dat, file.datwe, sep = '/'))
+# titanic <- read.csv(paste(folder.dat, file.dat, sep = '/'))
+# titanicwe <- read.csv(paste(folder.dat, file.datwe, sep = '/'))
+titanic <- read.csv(file.dat)
+titanicwe <- read.csv(file.datwe)
 setdiff(names(titanicwe), names(titanic))
 
 
@@ -147,13 +135,13 @@ P1 <- c('Pclass', 'Sex', 'Age')
 P2 <- c('Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare')
 P3 <- c(P2, 'Ethnicity') #: titanicwe dataset only
 
+# Optional feature vetting:
 numeric_feature_cols <- names(titanic)[sapply(titanic, is.numeric)]
-
 correlation_matrix <- rcorr(as.matrix(titanic[, vector.indices(titanic, numeric_feature_cols)]))
 fc <- findCorrelation(correlation_matrix$r, names = TRUE, verbose = FALSE)
 se <- string.elements(as.character(fc), print = TRUE)
 
-# add engineered features:
+# Optional feature engineering:
 titanic3 <- addPredictors(titanicwe)  # TODO: code this function!
 P4 <- c(P3, setdiff(names(titanic3), names(titanicwe)))
 
@@ -234,47 +222,15 @@ par(mar = c(4, 3, 1, 1))
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 # save fitted model, data, evaluation results ...
-saveRDS(model.A2P1L1, file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
+saveRDS(model.A1P1L1, file = paste(folder.dat, 'model.A1P1L1', sep = '/'))
 
 # retrieve fitted model, data, evaluation results ...
-model.A2P1L1 <- readRDS(file = paste(folder.dat, 'model.A2P1L1', sep = '/'))
-
+my_model <- readRDS(file = paste(folder.dat, 'model.A1P1L1', sep = '/'))
 
 
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 # Model Experimentation                                                              ==============
 # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-
-# Algorithm A2: naiveBayes =============================================================================
-# WARNING: BROKEN !
-
-model.A2P1L1 <- setupModel(indata = titanic, algo_code = A2.code, algo_name = A2.name, 
-                           response_col = L1, predictor_cols = P1, tag_col = 'PassengerId', 
-                           response_levels = c(0, 1, -2000), 
-                           model_name = 'A2P1L1', subset_name = 'NONE', 
-                           partitioning = c(0.7, 0.3), nfolds = 1, 
-                           response_type = 'logical', boolToFactors = TRUE, verbose = TRUE)
-
-model.A2P1L1$fit <- naiveBayes(mlabs ~.,
-                               data = mutate(model.A2P1L1$mdat,
-                                             mlabs = as.logical(model.A2P1L1$mlabs)),
-                               subset = model.A2P1L1$training)
-# model.A2P1L1$fit <- naiveBayes(mlabs ~., 
-#                                data = mutate(model.A2P1L1$mdat[model.A2P1L1$training, ], 
-#                                              mlabs = as.logical(model.A2P1L1$mlabs[model.A2P1L1$training])))
-
-model.A2P1L1 <- getModelPredictions(model.A2P1L1)
-model.A2P1L1 <- getModelClasses(model.A2P1L1, threshold = 0.5)
-model.A2P1L1<- evaluateModel(model.A2P1L1, c('training', 'testing'), verbose = TRUE)
-
-par(mar = c(4, 4, 4, 4) + .1)
-plot.roc(model.A2P1L1$mlabs[model.A2P1L1$testing], model.A2P1L1$yhat[model.A2P1L1$testing], 
-         percent = TRUE, add = FALSE, col = "blue", lwd = 3, 
-         main = paste0("ROC Curve for Model ", model.A2P1L1$name, ': Test'))
-rect(100, 0, 0, 100, border = 'gray')
-par(mar = c(4, 3, 1, 1))
-
 
 
 # Predictor Set P2 with Algo A1 ===========================================================================
@@ -293,7 +249,7 @@ model.A1P2L1$fit <- glm(mlabs ~., family = binomial(link = 'logit'),
 model.A1P2L1 <- getModelPredictions(model.A1P2L1)
 model.A1P2L1 <- getModelClasses(model.A1P2L1, threshold = 0.5)
 model.A1P2L1 <- evaluateModel(model.A1P2L1, c('training', 'testing'))
-print(model.A1P2L1$eval$testing$auc)
+print(model.A1P2L1$eval)
 
 
 # Predictor Set P3 with Algo A1 (logreg) ==================================================================
@@ -312,12 +268,39 @@ model.A1P3L1$fit <- glm(mlabs ~., family = binomial(link = 'logit'),
 model.A1P3L1 <- getModelPredictions(model.A1P3L1)
 model.A1P3L1 <- getModelClasses(model.A1P3L1, threshold = 0.5)
 model.A1P3L1 <- evaluateModel(model.A1P3L1, c('training', 'testing'))
-print(model.A1P3L1$eval)
+print(model.A1P3L1$eval$testing$auc)  # print auc only, for testing dataset only
 
 
 
-# Predictor Set P3 with Algo A3 (random forest classifier) =================================================
-# WARNING: BROKEN!
+# Algorithm A2: naiveBayes =============================================================================
+
+model.A2P1L1 <- setupModel(indata = titanic, algo_code = A2.code, algo_name = A2.name, 
+                           response_col = L1, predictor_cols = P1, tag_col = 'PassengerId', 
+                           response_levels = c(0, 1, -2000), 
+                           model_name = 'A2P1L1', subset_name = 'NONE', 
+                           partitioning = c(0.7, 0.3), nfolds = 1, 
+                           response_type = 'logical', boolToFactors = TRUE, verbose = TRUE)
+
+model.A2P1L1$fit <- naiveBayes(mlabs ~., 
+                               data = mutate(model.A2P1L1$mdat, 
+                                             mlabs = as.logical(model.A2P1L1$mlabs)),
+                               subset = model.A2P1L1$training)
+
+model.A2P1L1 <- getModelPredictions(model.A2P1L1)
+model.A2P1L1 <- getModelClasses(model.A2P1L1, threshold = 0.5)
+model.A2P1L1<- evaluateModel(model.A2P1L1, c('training', 'testing'), verbose = TRUE)  # prints all supported evaluations for algo
+
+par(mar = c(4, 4, 4, 4) + .1)
+plot.roc(model.A2P1L1$mlabs[model.A2P1L1$testing], model.A2P1L1$yhat[model.A2P1L1$testing], 
+         percent = TRUE, add = FALSE, col = "blue", lwd = 3, 
+         main = paste0("ROC Curve for Model ", model.A2P1L1$name, ': Test'))
+rect(100, 0, 0, 100, border = 'gray')
+par(mar = c(4, 3, 1, 1))
+
+
+
+
+# Predictor Set P3 with Algo A3 ===========================================================================
 
 model.A3P3L1 <- setupModel(indata = titanicwe, algo_code = A3.code, algo_name = A3.name, 
                            response_col = L1, predictor_cols = P3, tag_col = 'PassengerId', 
